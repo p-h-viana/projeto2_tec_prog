@@ -53,3 +53,8 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+#Pastas de objeto, executavel e biblioteca
+build/
+bin/
+lib/
