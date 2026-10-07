@@ -51,3 +51,21 @@ PhStatus calc_henderson_hasselbalch(double pka, double concentracao_sal, double 
     // Retorno de Sucesso 
     return PH_SUCCESS;
 }
+
+PhStatus ph_acid_diluido(double concentracao_acido, double *point_ph) {
+    // Validação de Erros
+    if (concentracao_acido <= 0.0) {
+        return ERRO_CONC_NEGAT;
+    }
+
+    // Cálculo do pH para ácido diluído
+    double kw = 1.0e-14; // Constante de autoionização da água a 25°C 
+    
+    // Calculando a concentração total de H+ usando a raiz positiva da equação 
+    double h_total = (concentracao_acido + sqrt((concentracao_acido * concentracao_acido) + (4.0 * kw))) / 2.0;
+
+    *point_ph = -log10(h_total);
+
+    // 3. Retorno de Sucesso 
+    return PH_SUCCESS;
+}
