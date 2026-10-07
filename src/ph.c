@@ -2,16 +2,16 @@
 #include <math.h>
 
 PhStatus calc_strong_acid_ph(double concentracao_h, double *point_ph) {
-    /* 1. Validação de Erros */
+    //  Validação de Erros
     if (concentracao_h <= 0.0) {
         return PH_ERR_NEGATIVE_CONC;
     }
 
-    /* 2. O Cálculo Matemático */
-    /* A função log10 vem da biblioteca <math.h> */
+   
+    // calculo do pH para ácido forte
     *point_ph = -log10(concentracao_h);
 
-    /* 3. Retorno de Sucesso */
+    //  Retorno de Sucesso
     return PH_SUCCESS;
 }
 
@@ -24,16 +24,30 @@ if (concentracao <= 0.0) {
         return ERRO_KA_NEGAT;
     }
 
-    /* Cálculo do pH para ácido fraco */
+    //  Cálculo do pH para ácido fraco
 
     double delta = (ka * ka) - (4.0 * 1.0 * (-ka * concentracao));
     
-    /* Calculando a concentração de H+ (raiz positiva) */
+    // Calculando a concentração de H+ (raiz positiva) */
     double x = (-ka + sqrt(delta)) / 2.0;
 
-    /* 3. Cálculo do pH e Retorno */
+    //  Cálculo do pH e Retorno 
     *point_ph = -log10(x);
 
     return PH_SUCCESS;
 
+}
+
+PhStatus calc_henderson_hasselbalch(double pka, double concentracao_sal, double concentracao_acido, double *point_ph) {
+    //  Validação de Erros 
+    // Nenhuma das concentrações pode ser zero ou negativa 
+    if (concentracao_sal <= 0.0 || concentracao_acido <= 0.0) {
+        return ERRO_CONC_NEGAT;
+    }
+
+// calculo
+    *point_ph = pka + log10(concentracao_sal / concentracao_acido);
+
+    // Retorno de Sucesso 
+    return PH_SUCCESS;
 }
