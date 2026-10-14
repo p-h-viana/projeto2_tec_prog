@@ -1,4 +1,5 @@
 #include "elementos.h"
+#include <string.h>
 
 typedef struct {
     char simbolo[3];
@@ -141,3 +142,92 @@ static const Elemento elementos[] = {
     {"Ts", "Tenessino",       117, 294.0,     17, 7, "Halogenio"},
     {"Og", "Oganessonio",     118, 294.0,     18, 7, "Gas nobre"}
 };
+
+/* Variável e 2 funções que não entram na API pública:
+ * Fazem parte da busca (no array elementos[]) de uma informação, que interessa ao usuário,
+ * no struct Elemento, que não deve ser público.
+ */
+
+// Contabiliza o número de elementos químicos na tabela periódica com O(1). 
+// Usada como limite superior para os loops de busca. 
+int numero_de_elementos = sizeof(elementos) / sizeof(Elemento);
+
+// Retorna um ponteiro para o elemento químico com o símbolo fornecido.
+// O símbolo é o parâmetro para as principais buscas na tabela
+const Elemento* ponteiro_por_simbolo(const char* simbolo) {
+    for (int i = 0; i < numero_de_elementos; i++) {
+        if (strcmp(elementos[i].simbolo, simbolo) == 0) {
+            return &elementos[i];
+        }
+    }
+    return NULL;
+}
+
+// Retorna um ponteiro para o elemento químico com o nome fornecido.
+// Usado apenas para buscar o símbolo do elemento químico.
+const Elemento* ponteiro_por_nome(const char* nome) {
+    for (int i = 0; i < numero_de_elementos; i++) {
+        if (strcmp(elementos[i].nome, nome) == 0) {
+            return &elementos[i];
+        }
+    }
+    return NULL;
+}
+
+/* Funções públicas para consulta de dados da lista*/
+
+const char* nome(const char* simbolo) {
+    const Elemento* elemento = ponteiro_por_simbolo(simbolo);
+    if (elemento != NULL) {
+        return elemento->nome;
+    }
+    return NULL;
+}
+
+int numero_atomico(const char* simbolo) {
+    const Elemento* elemento = ponteiro_por_simbolo(simbolo);
+    if (elemento != NULL) {
+        return elemento->numero_atomico;
+    }
+    return -1;
+}
+
+int massa_atomica(const char* simbolo) {
+    const Elemento* elemento = ponteiro_por_simbolo(simbolo);
+    if (elemento != NULL) {
+        return elemento->massa_atomica;
+    }
+    return -1;
+}
+
+int grupo(const char* simbolo) {
+    const Elemento* elemento = ponteiro_por_simbolo(simbolo);
+    if (elemento != NULL) {
+        return elemento->grupo;
+    }
+    return -1;
+}
+
+int periodo(const char* simbolo) {
+    const Elemento* elemento = ponteiro_por_simbolo(simbolo);
+    if (elemento != NULL) {
+        return elemento->periodo;
+    }
+    return -1;
+}
+
+const char* classificacao(const char* simbolo) {
+    const Elemento* elemento = ponteiro_por_simbolo(simbolo);
+    if (elemento != NULL) {
+        return elemento->classificacao;
+    }
+    return NULL;
+}
+
+const char* simbolo(const char* nome) {
+    const Elemento* elemento = ponteiro_por_nome(nome);
+    if (elemento != NULL) {
+        return elemento->simbolo;
+    }
+    return NULL;
+}
