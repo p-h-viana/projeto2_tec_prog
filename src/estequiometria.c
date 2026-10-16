@@ -439,3 +439,83 @@ static double massa_molar(const Especie *e)
         m += e->atomos[i] * TABELA[i].massa;
     return m;
 }
+
+EstqStatus estq_balancear(const char *equacao, char *saida, size_t tam_saida)
+{
+    Equacao eq;
+    EstqStatus st;
+
+    if (equacao == NULL || saida == NULL || tam_saida == 0)
+        return ESTQ_ERRO_PARAMETRO;
+    saida[0] = '\0';
+
+    if ((st = ler_equacao(equacao, &eq)) != ESTQ_OK)
+        return st;
+    if ((st = balancear(&eq)) != ESTQ_OK)
+        return st;
+    return escrever(&eq, saida, tam_saida);
+}
+
+EstqStatus estq_massa_produto(const char *equacao, const double massas[], size_t n_massas,
+                              const char *produto, double *massa_produto, size_t *limitante)
+{
+    Equacao eq;
+    EstqStatus st;
+    size_t j, p, lim = 0;
+    double menor = 0.0;
+
+    if (equacao == NULL || massas == NULL || produto == NULL || massa_produto == NULL)
+        return ESTQ_ERRO_PARAMETRO;
+    if ((st = ler_equacao(equacao, &eq)) != ESTQ_OK)
+        return st;
+    if ((st = balancear(&eq)) != ESTQ_OK)
+        return st;
+    if (n_massas != eq.n_reagentes)
+        return ESTQ_ERRO_PARAMETRO;
+
+    for (p = eq.n_reagentes; p < eq.n_especies; p++)
+        if (strcmp(eq.esp[p].formula, produto) == 0)
+            break;
+    if (p == eq.n_especies)
+        return ESTQ_ERRO_PRODUTO;
+    for (j = 0; j < n_massas; j++) {
+        double x;
+
+        if (!isfinite(massas[j]) || massas[j] < 0.0)
+            return ESTQ_ERRO_PARAMETRO;
+        x = massas[j] / massa_molar(&eq.esp[j]) / (double)eq.coef[j];
+        if (j == 0 || x < menor) {
+            menor = x;
+            lim = j;
+        }
+    }
+
+    *massa_produto = menor * (double)eq.coef[p] * massa_molar(&eq.esp[p]);
+    if (limitante != NULL)
+        *limitante = lim;
+    return ESTQ_OK;
+}
+
+EstqStatus estq_rendimento(double massa_real, double massa_teorica, double *rendimento)
+{
+    if (rendimento == NULL || !isfinite(massa_real) || !isfinite(massa_teorica))
+        return ESTQ_ERRO_PARAMETRO;
+    if (massa_teorica <= 0.0 || massa_real < 0.0 || massa_real > massa_teorica)
+        return ESTQ_ERRO_PARAMETRO;
+
+    *rendimento = massa_real / massa_teorica * 100.0;
+    return ESTQ_OK;
+}
+const char *estq_mensagem_erro(EstqStatus status)
+{
+    switch (status) {
+    case ESTQ_OK:                 return "sucesso";
+    case ESTQ_ERRO_PARAMETRO:     return "parâmetro inválido";
+    case ESTQ_ERRO_SINTAXE:       return "equação ou fórmula mal escrita";
+    case ESTQ_ERRO_ELEMENTO:      return "elemento químico desconhecido";
+    case ESTQ_ERRO_BALANCEAMENTO: return "não foi possível balancear a equação";
+    case ESTQ_ERRO_PRODUTO:       return "produto não encontrado na equação";
+    case ESTQ_ERRO_LIMITE:        return "limite do módulo excedido";
+    }
+    return "erro desconhecido";
+}
