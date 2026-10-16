@@ -18,7 +18,7 @@ typedef struct {
  * Tabela periódica dos 118 elementos químicos.
  *
  * Campos:
- * simbolo, nome, numero_atomico, massa_atomica, grupo, periodo
+ * simbolo, nome, numero_atomico, massa_atomica, grupo, periodo, classificacao
  *
  * Para elementos sem peso atomico padrao, massa_atomica armazena
  * um numero de massa de referencia de um isotopo.
@@ -146,7 +146,8 @@ static const Elemento elementos[] = {
     {"Og", "Oganessonio",     118, 294.0,     18, 7, "Gas nobre"}
 };
 
-/* Variável e 2 funções que não entram na API pública:
+/* 
+ * Variável e 2 funções que não entram na API pública:
  * Fazem parte da busca (no array elementos[]) de uma informação, que interessa ao usuário,
  * no struct Elemento, que não deve ser público.
  */
