@@ -1,5 +1,8 @@
-#include "elementos.h"
+#include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
+#include <math.h>
+#include "elementos.h"
 
 typedef struct {
     char simbolo[3];
