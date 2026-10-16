@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <math.h>
-#include "../include/elementos.h"
+#include "elementos.h"
 
 bool teste_nome(void) {
     bool iguais = (strcmp(elemento_nome("H"), "Hidrogenio") == 0 && strcmp(elemento_nome("Dy"), "Disprosio") == 0 && strcmp(elemento_nome("Og"), "Oganessonio") == 0);
