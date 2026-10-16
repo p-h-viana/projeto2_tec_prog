@@ -175,3 +175,104 @@ static EstqStatus ler_grupo(const char **p, char fecha, long atomos[], int prof)
     }
     return vazio ? ESTQ_ERRO_SINTAXE : ESTQ_OK;
 }
+
+/**
+ * @brief Tira os espaços do começo e do fim de uma string.
+ * @param s String a ser aparada (é modificada).
+ * @return Ponteiro para o primeiro caractere que não é espaço.
+ */
+static char *aparar(char *s)
+{
+    char *fim;
+
+    while (isspace((unsigned char)*s))
+        s++;
+    fim = s + strlen(s);
+    while (fim > s && isspace((unsigned char)fim[-1]))
+        fim--;
+    *fim = '\0';
+    return s;
+}
+/**
+ * @brief Lê um termo da equação (ex.: "2H2O") e acrescenta a substância em @p eq.
+ * @param termo Texto do termo; o coeficiente na frente é ignorado.
+ * @param eq    Equação que recebe a substância.
+ * @return ::ESTQ_OK ou o código do erro encontrado.
+ */
+static EstqStatus ler_termo(char *termo, Equacao *eq)
+{
+    Especie *e;
+    const char *p;
+    EstqStatus st;
+
+    termo = aparar(termo);
+    while (isdigit((unsigned char)*termo)) /* coeficiente digitado: ignorado */
+        termo++;
+    while (isspace((unsigned char)*termo))
+        termo++;
+    if (*termo == '\0')
+        return ESTQ_ERRO_SINTAXE;
+    if (eq->n_especies == ESTQ_MAX_ESPECIES)
+        return ESTQ_ERRO_LIMITE;
+
+    e = &eq->esp[eq->n_especies];
+    e->formula = termo;
+    memset(e->atomos, 0, sizeof e->atomos);
+    p = termo;
+    if ((st = ler_grupo(&p, '\0', e->atomos, 0)) != ESTQ_OK)
+        return st;
+    eq->n_especies++;
+    return ESTQ_OK;
+}
+/**
+ * @brief Lê um lado da equação, com os termos separados por '+'.
+ * @param lado Texto do lado (é modificado).
+ * @param eq   Equação que recebe as substâncias.
+ * @return ::ESTQ_OK ou o código do erro encontrado.
+ */
+static EstqStatus ler_lado(char *lado, Equacao *eq)
+{
+    for (;;) {
+        char *mais = strchr(lado, '+');
+        EstqStatus st;
+
+        if (mais != NULL)
+            *mais = '\0';
+        st = ler_termo(lado, eq);
+        if (st != ESTQ_OK || mais == NULL)
+            return st;
+        lado = mais + 1;
+    }
+}
+/**
+ * @brief Separa a equação em reagentes e produtos e lê todas as substâncias.
+ * @param texto Equação digitada.
+ * @param eq    Estrutura preenchida com as substâncias.
+ * @return ::ESTQ_OK ou o código do erro encontrado.
+ */
+static EstqStatus ler_equacao(const char *texto, Equacao *eq)
+{
+    /* "->", "=>", a seta em UTF-8 e "="; o "=" fica por último porque faz parte de "=>" */
+    static const char *const separadores[] = {"->", "=>", "\xE2\x86\x92", "="};
+    char *sep = NULL;
+    size_t i, tam_sep = 0;
+    EstqStatus st;
+
+    if (strlen(texto) > ESTQ_MAX_EQUACAO)
+        return ESTQ_ERRO_LIMITE;
+    strcpy(eq->texto, texto);
+    eq->n_especies = 0;
+
+    for (i = 0; i < sizeof separadores / sizeof separadores[0] && sep == NULL; i++) {
+        sep = strstr(eq->texto, separadores[i]);
+        tam_sep = strlen(separadores[i]);
+    }
+    if (sep == NULL)
+        return ESTQ_ERRO_SINTAXE;
+    *sep = '\0';
+
+    if ((st = ler_lado(eq->texto, eq)) != ESTQ_OK)
+        return st;
+    eq->n_reagentes = eq->n_especies;
+    return ler_lado(sep + tam_sep, eq);
+}
