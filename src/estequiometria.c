@@ -276,3 +276,166 @@ static EstqStatus ler_equacao(const char *texto, Equacao *eq)
     eq->n_reagentes = eq->n_especies;
     return ler_lado(sep + tam_sep, eq);
 }
+
+/**
+ * @brief Máximo divisor comum (sempre não negativo).
+ * @param a Primeiro número.
+ * @param b Segundo número.
+ * @return mdc(|a|, |b|); vale 0 só se os dois forem 0.
+ */
+static long long mdc(long long a, long long b)
+{
+    if (a < 0)
+        a = -a;
+    if (b < 0)
+        b = -b;
+    while (b != 0) {
+        long long r = a % b;
+        a = b;
+        b = r;
+    }
+    return a;
+}
+
+/**
+ * @brief Calcula os coeficientes da equação.
+ *
+ * Monta a matriz A (uma linha por elemento, uma coluna por substância, com os
+ * produtos negativos) e procura x com A·x = 0. Depois da eliminação, a equação
+ * só tem balanceamento único se sobrar exatamente uma variável livre; os
+ * coeficientes saem dela e precisam ser todos positivos.
+ *
+ * @param eq Equação já lida; o resultado vai para @c eq->coef.
+ * @return ::ESTQ_OK, ::ESTQ_ERRO_BALANCEAMENTO ou ::ESTQ_ERRO_LIMITE.
+ */
+static EstqStatus balancear(Equacao *eq)
+{
+    long long m[NUM_ELEMENTOS][ESTQ_MAX_ESPECIES];
+    size_t piv[ESTQ_MAX_ESPECIES]; /* coluna do pivô de cada linha */
+    int eh_pivo[ESTQ_MAX_ESPECIES] = {0};
+    size_t n = eq->n_especies, linhas = 0, posto = 0, livre = 0;
+    size_t i, j, k, col;
+    long long mmc = 1, g;
+    int el;
+
+    /* uma linha para cada elemento que aparece na equação */
+    for (el = 0; el < NUM_ELEMENTOS; el++) {
+        int presente = 0;
+
+        for (j = 0; j < n; j++) {
+            long long v = eq->esp[j].atomos[el];
+
+            m[linhas][j] = (j < eq->n_reagentes) ? v : -v;
+            if (v != 0)
+                presente = 1;
+        }
+        if (presente)
+            linhas++;
+    }
+
+    for (col = 0; col < n && posto < linhas; col++) {
+        i = posto;
+        while (i < linhas && m[i][col] == 0)
+            i++;
+        if (i == linhas)
+            continue; /* coluna sem pivô: variável livre */
+
+        for (k = 0; k < n; k++) { /* troca a linha i com a linha do pivô */
+            long long t = m[i][k];
+            m[i][k] = m[posto][k];
+            m[posto][k] = t;
+        }
+
+        for (i = 0; i < linhas; i++) { /* zera a coluna nas outras linhas */
+            long long a = m[posto][col], b = m[i][col];
+
+            if (i == posto || b == 0)
+                continue;
+            g = 0;
+            for (k = 0; k < n; k++) {
+                m[i][k] = m[i][k] * a - m[posto][k] * b;
+                g = mdc(g, m[i][k]);
+            }
+            for (k = 0; k < n; k++) {
+                if (g > 1)
+                    m[i][k] /= g;
+                if (m[i][k] > MAX_VALOR || m[i][k] < -MAX_VALOR)
+                    return ESTQ_ERRO_LIMITE;
+            }
+        }
+        piv[posto++] = col;
+        eh_pivo[col] = 1;
+    }
+
+    if (n - posto != 1)
+        return ESTQ_ERRO_BALANCEAMENTO; /* nenhuma solução ou várias independentes */
+    while (eh_pivo[livre])
+        livre++;
+
+    /* a variável livre vale o mmc dos pivôs, assim as outras saem inteiras */
+    for (i = 0; i < posto; i++) {
+        long long p = m[i][piv[i]] < 0 ? -m[i][piv[i]] : m[i][piv[i]];
+
+        mmc = mmc / mdc(mmc, p) * p;
+        if (mmc > MAX_VALOR)
+            return ESTQ_ERRO_LIMITE;
+    }
+    eq->coef[livre] = mmc;
+    for (i = 0; i < posto; i++)
+        eq->coef[piv[i]] = -m[i][livre] * (mmc / m[i][piv[i]]);
+
+    /* simplifica e confere se ninguém ficou com coeficiente zero ou negativo */
+    g = 0;
+    for (j = 0; j < n; j++)
+        g = mdc(g, eq->coef[j]);
+    for (j = 0; j < n; j++) {
+        eq->coef[j] /= g;
+        if (eq->coef[j] <= 0)
+            return ESTQ_ERRO_BALANCEAMENTO;
+    }
+    return ESTQ_OK;
+}
+
+/**
+ * @brief Escreve a equação balanceada em @p saida.
+ * @param eq    Equação com os coeficientes já calculados.
+ * @param saida Buffer de saída.
+ * @param tam   Tamanho de @p saida em bytes.
+ * @return ::ESTQ_OK ou ::ESTQ_ERRO_LIMITE se o resultado não couber.
+ */
+static EstqStatus escrever(const Equacao *eq, char *saida, size_t tam)
+{
+    size_t j, usado = 0;
+
+    for (j = 0; j < eq->n_especies; j++) {
+        const char *sep = (j == 0) ? "" : (j == eq->n_reagentes) ? " -> " : " + ";
+        int k;
+
+        if (eq->coef[j] == 1)
+            k = snprintf(saida + usado, tam - usado, "%s%s", sep, eq->esp[j].formula);
+        else
+            k = snprintf(saida + usado, tam - usado, "%s%lld%s", sep, eq->coef[j],
+                         eq->esp[j].formula);
+        if (k < 0 || (size_t)k >= tam - usado) {
+            saida[0] = '\0';
+            return ESTQ_ERRO_LIMITE;
+        }
+        usado += (size_t)k;
+    }
+    return ESTQ_OK;
+}
+
+/**
+ * @brief Massa molar de uma substância.
+ * @param e Substância já lida.
+ * @return Massa molar em g/mol.
+ */
+static double massa_molar(const Especie *e)
+{
+    double m = 0.0;
+    int i;
+
+    for (i = 0; i < NUM_ELEMENTOS; i++)
+        m += e->atomos[i] * TABELA[i].massa;
+    return m;
+}
