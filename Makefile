@@ -19,3 +19,7 @@ APP_DYNAMIC = $(BIN_DIR)/app_dynamic
 
 TEST_SRC = $(wildcard $(TEST_DIR)/test_*.c)
 TEST_BIN = $(TEST_SRC:$(TEST_DIR)/%.c=$(BIN_DIR)/%)
+
+.PHONY: all clean run test install
+
+all: $(LIB_STATIC) $(LIB_SHARED) $(APP_STATIC) $(APP_SHARED)
