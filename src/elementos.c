@@ -1,8 +1,10 @@
-#include <stdio.h>
-#include <stdbool.h>
-#include <string.h>
-#include <math.h>
+/**
+ * @file elementos.c
+ * @brief Implementação do módulo de elementos (tabela periódica).
+ */
 #include "elementos.h"
+#include <stddef.h>
+#include <string.h>
 
 typedef struct {
     char simbolo[3];
@@ -15,7 +17,7 @@ typedef struct {
 } Elemento;
 
 /*
- * Tabela periódica dos 118 elementos químicos.
+ * Tabela periódica dos 118 elementos químicos, em ordem de número atômico.
  *
  * Campos:
  * simbolo, nome, numero_atomico, massa_atomica, grupo, periodo, classificacao
@@ -152,8 +154,8 @@ static const Elemento elementos[] = {
  * no struct Elemento, que não deve ser público.
  */
 
-// Contabiliza o número de elementos químicos na tabela periódica em O(1). 
-// Usada como limite superior para os loops de busca. 
+// Número de elementos químicos na tabela periódica.
+// Usado como limite superior para os loops de busca.
 static const int numero_de_elementos = sizeof(elementos) / sizeof(Elemento);
 
 // Retorna um ponteiro para o elemento químico com o símbolo fornecido.
@@ -205,7 +207,7 @@ double elemento_massa_atomica(const char* simbolo) {
     if (elemento != NULL) {
         return elemento->massa_atomica;
     }
-    return -1;
+    return -1.0;
 }
 
 int elemento_grupo(const char* simbolo) {
@@ -239,3 +241,4 @@ const char* elemento_simbolo(const char* nome) {
     }
     return NULL;
 }
+
