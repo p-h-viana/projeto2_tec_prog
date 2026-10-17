@@ -1,72 +1,70 @@
+/**
+ * @file termoquimica.h
+ * @brief Variação de entalpia de reações (tabela de entalpias e Lei de Hess).
+ *
+ * @details As entalpias de formação ficam numa tabela interna pequena, com
+ * valores padrão a 25 °C em kJ/mol: H2O (líquida), CO2, CH4 e O2. Os nomes
+ * são comparados exatamente como escritos (ex.: "CO2").
+ *
+ * Uma reação com |ΔH| menor que 1e-6 kJ é classificada como atérmica, para
+ * não depender de a soma em ponto flutuante dar exatamente zero.
+ */
 #ifndef TERMOQUIMICA_H
 #define TERMOQUIMICA_H
 
-/**
- * @brief Status de retorno para as funções de termodinâmica.
- */
+/** @brief Códigos de retorno do módulo de termoquímica. */
 typedef enum {
-    SUCESSO_TERMO = 0,
-    ERRO_PONTEIRO_NULO = 1,
-    ERRO_QUANTIDADE_INVALIDA = 2,
-    ERRO_SUBSTANCIA_NAO_ENCONTRADA = 3 
+    TERMO_OK = 0,                        /**< Sucesso. */
+    TERMO_ERRO_PONTEIRO_NULO,            /**< Algum ponteiro (ou nome de substância) é NULL. */
+    TERMO_ERRO_QUANTIDADE_INVALIDA,      /**< Quantidade de substâncias ou equações <= 0. */
+    TERMO_ERRO_SUBSTANCIA_NAO_ENCONTRADA,/**< Substância fora da tabela de entalpias. */
+    TERMO_ERRO_VALOR_INVALIDO            /**< Número não finito ou quantidade em mol negativa. */
 } TermoStatus;
 
-/**
- * @brief Classificação do tipo de reação com base no Delta H.
- */
+/** @brief Classificação da reação pelo sinal de ΔH. */
 typedef enum {
-    REACAO_EXOTERMICA = 0, /* Delta H < 0 (Libera calor) */
-    REACAO_ENDOTERMICA = 1, /* Delta H > 0 (Absorve calor) */
-    REACAO_ATERMICA = 2     /* Delta H = 0 (Não há troca de calor) */
+    TERMO_REACAO_EXOTERMICA,  /**< ΔH < 0. */
+    TERMO_REACAO_ENDOTERMICA, /**< ΔH > 0. */
+    TERMO_REACAO_ATERMICA     /**< ΔH = 0 (dentro da tolerância). */
 } TipoReacao;
 
-/**
- * @brief Estrutura para armazenar os dados de cada participante da reação.
- */
+/** @brief Substância de uma reação e sua quantidade. */
 typedef struct {
-    char nome[50]; /* Nome da molécula (ex: "H2O") */
-    double mols;   /* Coeficiente estequiométrico */
+    const char *nome; /**< Fórmula, ex.: "CO2". */
+    double mols;      /**< Quantidade em mol (coeficiente da equação), >= 0. */
 } Substancia;
 
 /**
- * @brief Simulação da busca no Banco de Dados.
- * 
- * @param nome_substancia Nome da molécula para buscar.
- * @param encontrou Ponteiro que recebe 1 se achou e 0 se não achou.
- * @return double Retorna o valor da entalpia da substância.
+ * @brief Calcula ΔH = Σ(n·ΔHf produtos) − Σ(n·ΔHf reagentes) usando a tabela interna.
+ * @param qtd_reagentes     Número de reagentes (> 0).
+ * @param reagentes         Vetor com os reagentes.
+ * @param qtd_produtos      Número de produtos (> 0).
+ * @param produtos          Vetor com os produtos.
+ * @param point_delta_h     Recebe ΔH em kJ.
+ * @param point_tipo_reacao Recebe a classificação da reação.
+ * @return ::TERMO_OK, ou:
+ *         - ::TERMO_ERRO_PONTEIRO_NULO se algum ponteiro ou nome for NULL;
+ *         - ::TERMO_ERRO_QUANTIDADE_INVALIDA se alguma quantidade for <= 0;
+ *         - ::TERMO_ERRO_VALOR_INVALIDO se algum @c mols for negativo ou não finito;
+ *         - ::TERMO_ERRO_SUBSTANCIA_NAO_ENCONTRADA se uma substância não estiver na tabela.
  */
-double buscar_entalpia_bd(const char *nome_substancia, int *encontrou);
-
-/**
- * @brief Calcula o Delta H buscando as entalpias automaticamente no Banco de Dados.
- * 
- * @param qtd_reagentes Número de substâncias nos reagentes.
- * @param reagentes Array com as estruturas dos reagentes.
- * @param qtd_produtos Número de substâncias nos produtos.
- * @param produtos Array com as estruturas dos produtos.
- * @param point_delta_h Ponteiro onde o valor numérico do Delta H será salvo.
- * @param point_tipo_reacao Ponteiro onde a classificação da reação será salva.
- * @return TermoStatus Retorna SUCESSO_TERMO em caso de sucesso ou erro apropriado.
- */
-TermoStatus entalpia_reacao_bd(
+TermoStatus termo_entalpia_reacao_bd(
     int qtd_reagentes, Substancia reagentes[],
     int qtd_produtos, Substancia produtos[],
-    double *point_delta_h, TipoReacao *point_tipo_reacao
-);
+    double *point_delta_h, TipoReacao *point_tipo_reacao);
 
 /**
- * @brief Calcula o Delta H final de uma reação usando a Lei de Hess.
- * 
- * @param qtd_equacoes Número de equações intermediárias.
- * @param delta_h_equacoes Array com os valores de Delta H de cada equação intermediária.
- * @param multiplicadores Array com os fatores de multiplicação de cada equação.
- * @param point_delta_h Ponteiro onde o valor numérico do Delta H final será salvo.
- * @param point_tipo_reacao Ponteiro onde a classificação da reação global será salva.
- * @return TermoStatus Retorna SUCESSO_TERMO em caso de sucesso ou erro apropriado.
+ * @brief Calcula ΔH pela Lei de Hess: Σ ΔH_i · multiplicador_i.
+ * @param qtd_equacoes      Número de equações (> 0).
+ * @param delta_h_equacoes  ΔH de cada equação, em kJ.
+ * @param multiplicadores   Fator de cada equação (negativo para equação invertida).
+ * @param point_delta_h     Recebe ΔH em kJ.
+ * @param point_tipo_reacao Recebe a classificação da reação.
+ * @return ::TERMO_OK, ::TERMO_ERRO_PONTEIRO_NULO, ::TERMO_ERRO_QUANTIDADE_INVALIDA
+ *         ou ::TERMO_ERRO_VALOR_INVALIDO (algum valor não finito).
  */
-TermoStatus lei_de_hess(
-    int qtd_equacoes, double delta_h_equacoes[], double multiplicadores[], 
-    double *point_delta_h, TipoReacao *point_tipo_reacao
-);
+TermoStatus termo_lei_de_hess(
+    int qtd_equacoes, double delta_h_equacoes[], double multiplicadores[],
+    double *point_delta_h, TipoReacao *point_tipo_reacao);
 
-#endif 
+#endif /* TERMOQUIMICA_H */
