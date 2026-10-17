@@ -1,26 +1,32 @@
-PREFIX = /usr/local
-LIBNAME = quimica
-SRC_DIR = src
-APP_DIR = app
-TEST_DIR = tests
-BUILD = build
-LIB_DIR = lib
-BIN_DIR = bin
-SRC = $(wildcard $(SRC_DIR)/*.c)
-OBJ = $(SRC:$(SRC_DIR)/%.c=$(BUILD)/%.o)
-DEP = $(OBJ:.o=.d)
-HEADERS = $(wildcard include/*.h)
+CC       = gcc
+CFLAGS   = -std=c99 -Wall -Wextra -pedantic -Iinclude
+DEPFLAGS = -MMD -MP
+LDLIBS   = -lm
+AR       = ar
+PREFIX  ?= /usr/local
 
-LIB_STATIC = $(LIB_DIR)/lib$(LIBNAME).a
-LIB_DYNAMIC = $(LIB_DIR)/lib$(LIBNAME).so
+MODULOS = ph termoquimica estequiometria elementos
 
-APP_STATIC = $(BIN_DIR)/app_static
-APP_DYNAMIC = $(BIN_DIR)/app_dynamic
+OBJ_ESTATICO = $(MODULOS:%=build/estatico/%.o)
+OBJ_DINAMICO = $(MODULOS:%=build/dinamico/%.o)
+OBJ_TESTES   = $(MODULOS:%=build/tests/test_%.o)
+OBJ_APP      = build/app/main.o
+HEADERS      = $(MODULOS:%=include/%.h)
 
-TEST_SRC = $(wildcard $(TEST_DIR)/test_*.c)
-TEST_BIN = $(TEST_SRC:$(TEST_DIR)/%.c=$(BIN_DIR)/%)
+LIB_A  = lib/libquimica.a
+LIB_SO = lib/libquimica.so
+TESTES = $(MODULOS:%=bin/test_%)
 
 .PHONY: all clean run test install
 
-# alvo all tem dependencias nas bibliotecas e executáveis estaticos e dinamicos
-all: $(LIB_STATIC) $(LIB_DYNAMIC) $(APP_STATIC) $(APP_DYNAMIC)
+all: $(LIB_A) $(LIB_SO) bin/app_estatica bin/app_dinamica
+
+# Objetos da biblioteca estática
+$(OBJ_ESTATICO): build/estatico/%.o: src/%.c
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) $(DEPFLAGS) -c $< -o $@
+
+# Objetos da biblioteca dinâmica (precisam de -fPIC)
+$(OBJ_DINAMICO): build/dinamico/%.o: src/%.c
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) $(DEPFLAGS) -fPIC -c $< -o $@
