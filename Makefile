@@ -51,3 +51,24 @@ bin/app_estatica: $(OBJ_APP) $(LIB_A)
 bin/app_dinamica: $(OBJ_APP) $(LIB_SO)
 	@mkdir -p $(@D)
 	$(CC) $< -Llib -lquimica $(LDLIBS) -Wl,-rpath,'$$ORIGIN/../lib' -o $@
+
+$(OBJ_TESTES): build/tests/%.o: tests/%.c
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) $(DEPFLAGS) -c $< -o $@
+
+$(TESTES): bin/%: build/tests/%.o $(LIB_A)
+	@mkdir -p $(@D)
+	$(CC) $< $(LIB_A) $(LDLIBS) -o $@
+
+run: bin/app_estatica bin/app_dinamica
+	@echo "== Aplicacao com a biblioteca estatica =="
+	@./bin/app_estatica
+	@echo
+	@echo "== Aplicacao com a biblioteca dinamica =="
+	@./bin/app_dinamica
+
+test: $(TESTES)
+	@falhou=0; \
+	for t in $(TESTES); do ./$$t || falhou=1; echo; done; \
+	if [ $$falhou -eq 0 ]; then echo "RESULTADO: APROVADO (todos os testes passaram)"; \
+	else echo "RESULTADO: FALHOU (ha testes com erro)"; exit 1; fi
