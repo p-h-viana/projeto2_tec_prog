@@ -3,70 +3,32 @@
  * @brief Implementação do módulo de estequiometria.
  *
  * @details Tudo o que é @c static aqui é interno ao módulo:
- * - a tabela com os 118 elementos e suas massas atômicas;
  * - a leitura das fórmulas, que conta os átomos de cada elemento;
  * - a leitura da equação, que separa reagentes e produtos;
  * - o balanceamento, que monta a matriz elemento × substância (produtos com
  *   sinal negativo) e resolve A·x = 0 por eliminação de Gauss-Jordan só com
  *   inteiros, para não ter erro de arredondamento.
+ *
+ * Os símbolos e as massas atômicas vêm do módulo de elementos, para que a
+ * biblioteca inteira use a mesma tabela periódica.
  */
-
 #include "estequiometria.h"
-
+#include "elementos.h"
 #include <ctype.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
 
-#define NUM_ELEMENTOS    118        
-#define MAX_PROFUNDIDADE 8          
-#define MAX_INDICE       9999L      
-#define MAX_ATOMOS       99999L      
-#define MAX_VALOR        (1LL << 30) 
-
-/** @brief Elemento da tabela periódica. */
-typedef struct {
-    const char *simbolo; /**< Símbolo químico, ex.: "Fe". */
-    double massa;        /**< Massa atômica em g/mol. */
-} Elemento;
-
-/**
- * @brief Tabela periódica em ordem de número atômico.
- *
- * Massas atômicas padrão (valores convencionais da IUPAC). Para os elementos
- * sem massa padrão, usa-se o número de massa do isótopo mais estável.
- */
-static const Elemento TABELA[NUM_ELEMENTOS] = {
-    {"H", 1.008},   {"He", 4.0026}, {"Li", 6.94},   {"Be", 9.0122}, {"B", 10.81},
-    {"C", 12.011},  {"N", 14.007},  {"O", 15.999},  {"F", 18.998},  {"Ne", 20.180},
-    {"Na", 22.990}, {"Mg", 24.305}, {"Al", 26.982}, {"Si", 28.085}, {"P", 30.974},
-    {"S", 32.06},   {"Cl", 35.45},  {"Ar", 39.95},  {"K", 39.098},  {"Ca", 40.078},
-    {"Sc", 44.956}, {"Ti", 47.867}, {"V", 50.942},  {"Cr", 51.996}, {"Mn", 54.938},
-    {"Fe", 55.845}, {"Co", 58.933}, {"Ni", 58.693}, {"Cu", 63.546}, {"Zn", 65.38},
-    {"Ga", 69.723}, {"Ge", 72.630}, {"As", 74.922}, {"Se", 78.971}, {"Br", 79.904},
-    {"Kr", 83.798}, {"Rb", 85.468}, {"Sr", 87.62},  {"Y", 88.906},  {"Zr", 91.224},
-    {"Nb", 92.906}, {"Mo", 95.95},  {"Tc", 98.0},   {"Ru", 101.07}, {"Rh", 102.91},
-    {"Pd", 106.42}, {"Ag", 107.87}, {"Cd", 112.41}, {"In", 114.82}, {"Sn", 118.71},
-    {"Sb", 121.76}, {"Te", 127.60}, {"I", 126.90},  {"Xe", 131.29}, {"Cs", 132.91},
-    {"Ba", 137.33}, {"La", 138.91}, {"Ce", 140.12}, {"Pr", 140.91}, {"Nd", 144.24},
-    {"Pm", 145.0},  {"Sm", 150.36}, {"Eu", 151.96}, {"Gd", 157.25}, {"Tb", 158.93},
-    {"Dy", 162.50}, {"Ho", 164.93}, {"Er", 167.26}, {"Tm", 168.93}, {"Yb", 173.05},
-    {"Lu", 174.97}, {"Hf", 178.49}, {"Ta", 180.95}, {"W", 183.84},  {"Re", 186.21},
-    {"Os", 190.23}, {"Ir", 192.22}, {"Pt", 195.08}, {"Au", 196.97}, {"Hg", 200.59},
-    {"Tl", 204.38}, {"Pb", 207.2},  {"Bi", 208.98}, {"Po", 209.0},  {"At", 210.0},
-    {"Rn", 222.0},  {"Fr", 223.0},  {"Ra", 226.0},  {"Ac", 227.0},  {"Th", 232.04},
-    {"Pa", 231.04}, {"U", 238.03},  {"Np", 237.0},  {"Pu", 244.0},  {"Am", 243.0},
-    {"Cm", 247.0},  {"Bk", 247.0},  {"Cf", 251.0},  {"Es", 252.0},  {"Fm", 257.0},
-    {"Md", 258.0},  {"No", 259.0},  {"Lr", 266.0},  {"Rf", 267.0},  {"Db", 268.0},
-    {"Sg", 269.0},  {"Bh", 270.0},  {"Hs", 269.0},  {"Mt", 278.0},  {"Ds", 281.0},
-    {"Rg", 282.0},  {"Cn", 285.0},  {"Nh", 286.0},  {"Fl", 289.0},  {"Mc", 290.0},
-    {"Lv", 293.0},  {"Ts", 294.0},  {"Og", 294.0}
-};
+#define NUM_ELEMENTOS    118         /* tamanho da tabela de elementos.c */
+#define MAX_PROFUNDIDADE 8
+#define MAX_INDICE       9999L
+#define MAX_ATOMOS       99999L
+#define MAX_VALOR        (1LL << 30)
 
 /** @brief Substância de uma equação. */
 typedef struct {
     const char *formula;        /**< Fórmula sem coeficiente (aponta para dentro de Equacao::texto). */
-    long atomos[NUM_ELEMENTOS]; /**< Átomos de cada elemento, na ordem da tabela. */
+    long atomos[NUM_ELEMENTOS]; /**< Átomos de cada elemento; a posição é o número atômico - 1. */
 } Especie;
 
 /** @brief Equação já separada em substâncias. */
@@ -79,19 +41,22 @@ typedef struct {
 } Equacao;
 
 /**
- * @brief Procura um símbolo na tabela.
+ * @brief Procura um símbolo na tabela periódica.
  * @param sim Início do símbolo.
  * @param tam Número de caracteres do símbolo.
- * @return Posição do elemento na tabela, ou -1 se não existir.
+ * @return Número atômico - 1 (posição em Especie::atomos), ou -1 se não existir.
  */
 static int buscar_elemento(const char *sim, size_t tam)
 {
-    int i;
+    char simbolo[3];
+    int z;
 
-    for (i = 0; i < NUM_ELEMENTOS; i++)
-        if (strlen(TABELA[i].simbolo) == tam && strncmp(TABELA[i].simbolo, sim, tam) == 0)
-            return i;
-    return -1;
+    if (tam > 2)
+        return -1;
+    memcpy(simbolo, sim, tam);
+    simbolo[tam] = '\0';
+    z = elemento_numero_atomico(simbolo);
+    return z > 0 ? z - 1 : -1;
 }
 
 /**
@@ -193,6 +158,7 @@ static char *aparar(char *s)
     *fim = '\0';
     return s;
 }
+
 /**
  * @brief Lê um termo da equação (ex.: "2H2O") e acrescenta a substância em @p eq.
  * @param termo Texto do termo; o coeficiente na frente é ignorado.
@@ -224,6 +190,7 @@ static EstqStatus ler_termo(char *termo, Equacao *eq)
     eq->n_especies++;
     return ESTQ_OK;
 }
+
 /**
  * @brief Lê um lado da equação, com os termos separados por '+'.
  * @param lado Texto do lado (é modificado).
@@ -244,6 +211,7 @@ static EstqStatus ler_lado(char *lado, Equacao *eq)
         lado = mais + 1;
     }
 }
+
 /**
  * @brief Separa a equação em reagentes e produtos e lê todas as substâncias.
  * @param texto Equação digitada.
@@ -427,16 +395,34 @@ static EstqStatus escrever(const Equacao *eq, char *saida, size_t tam)
 
 /**
  * @brief Massa molar de uma substância.
+ *
+ * Os símbolos são lidos de novo da fórmula (que já foi validada) e cada
+ * elemento entra na soma uma vez só, com o total de átomos já contado.
+ *
  * @param e Substância já lida.
  * @return Massa molar em g/mol.
  */
 static double massa_molar(const Especie *e)
 {
+    int visto[NUM_ELEMENTOS] = {0};
+    const char *p;
     double m = 0.0;
-    int i;
 
-    for (i = 0; i < NUM_ELEMENTOS; i++)
-        m += e->atomos[i] * TABELA[i].massa;
+    for (p = e->formula; *p != '\0'; p++) {
+        char simbolo[3] = {0};
+        int el;
+
+        if (!isupper((unsigned char)*p))
+            continue;
+        simbolo[0] = p[0];
+        if (islower((unsigned char)p[1]))
+            simbolo[1] = p[1];
+        el = elemento_numero_atomico(simbolo) - 1;
+        if (el >= 0 && !visto[el]) {
+            visto[el] = 1;
+            m += e->atomos[el] * elemento_massa_atomica(simbolo);
+        }
+    }
     return m;
 }
 
@@ -506,16 +492,17 @@ EstqStatus estq_rendimento(double massa_real, double massa_teorica, double *rend
     *rendimento = massa_real / massa_teorica * 100.0;
     return ESTQ_OK;
 }
+
 const char *estq_mensagem_erro(EstqStatus status)
 {
     switch (status) {
     case ESTQ_OK:                 return "sucesso";
-    case ESTQ_ERRO_PARAMETRO:     return "parâmetro inválido";
-    case ESTQ_ERRO_SINTAXE:       return "equação ou fórmula mal escrita";
-    case ESTQ_ERRO_ELEMENTO:      return "elemento químico desconhecido";
-    case ESTQ_ERRO_BALANCEAMENTO: return "não foi possível balancear a equação";
-    case ESTQ_ERRO_PRODUTO:       return "produto não encontrado na equação";
-    case ESTQ_ERRO_LIMITE:        return "limite do módulo excedido";
+    case ESTQ_ERRO_PARAMETRO:     return "parametro invalido";
+    case ESTQ_ERRO_SINTAXE:       return "equacao ou formula mal escrita";
+    case ESTQ_ERRO_ELEMENTO:      return "elemento quimico desconhecido";
+    case ESTQ_ERRO_BALANCEAMENTO: return "nao foi possivel balancear a equacao";
+    case ESTQ_ERRO_PRODUTO:       return "produto nao encontrado na equacao";
+    case ESTQ_ERRO_LIMITE:        return "limite do modulo excedido";
     }
     return "erro desconhecido";
 }
