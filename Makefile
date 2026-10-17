@@ -30,3 +30,24 @@ $(OBJ_ESTATICO): build/estatico/%.o: src/%.c
 $(OBJ_DINAMICO): build/dinamico/%.o: src/%.c
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) $(DEPFLAGS) -fPIC -c $< -o $@
+
+$(LIB_A): $(OBJ_ESTATICO)
+	@mkdir -p $(@D)
+	$(AR) rcs $@ $^
+
+$(LIB_SO): $(OBJ_DINAMICO)
+	@mkdir -p $(@D)
+	$(CC) -shared $^ $(LDLIBS) -o $@
+
+$(OBJ_APP): build/app/%.o: app/%.c
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) $(DEPFLAGS) -c $< -o $@
+
+bin/app_estatica: $(OBJ_APP) $(LIB_A)
+	@mkdir -p $(@D)
+	$(CC) $< $(LIB_A) $(LDLIBS) -o $@
+
+# O rpath faz o executável achar lib/libquimica.so sem LD_LIBRARY_PATH
+bin/app_dinamica: $(OBJ_APP) $(LIB_SO)
+	@mkdir -p $(@D)
+	$(CC) $< -Llib -lquimica $(LDLIBS) -Wl,-rpath,'$$ORIGIN/../lib' -o $@
