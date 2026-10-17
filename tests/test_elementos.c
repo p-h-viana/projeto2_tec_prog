@@ -1,61 +1,53 @@
-#include <stdio.h>
-#include <stdbool.h>
-#include <string.h>
-#include <math.h>
+#include "teste.h"
 #include "elementos.h"
 
-bool teste_nome(void) {
-    bool iguais = (strcmp(elemento_nome("H"), "Hidrogenio") == 0 && strcmp(elemento_nome("Dy"), "Disprosio") == 0 && strcmp(elemento_nome("Og"), "Oganessonio") == 0);
-    bool nulos = (elemento_nome("Xx") == NULL && elemento_nome(NULL) == NULL);
-    return iguais && nulos;
-}
+int main(void)
+{
+    printf("Modulo elementos\n");
 
-bool teste_numero_atomico(void) {
-    bool iguais = (elemento_numero_atomico("H") == 1 && elemento_numero_atomico("Dy") == 66 && elemento_numero_atomico("Og") == 118);
-    bool invalidos = (elemento_numero_atomico("Xx") == -1 && elemento_numero_atomico(NULL) == -1);
-    return iguais && invalidos;
-}
+    /* elemento_nome */
+    VERIFICA(IGUAIS(elemento_nome("O"), "Oxigenio"), "nome de O e Oxigenio");
+    VERIFICA(IGUAIS(elemento_nome("Og"), "Oganessonio"), "nome do ultimo elemento (Og)");
+    VERIFICA(elemento_nome("Xx") == NULL, "nome de simbolo inexistente e NULL");
+    VERIFICA(elemento_nome("o") == NULL, "simbolo em minuscula nao e encontrado");
+    VERIFICA(elemento_nome(NULL) == NULL, "nome com argumento NULL e NULL");
 
-bool teste_massa_atomica(void) {
-    bool iguais = (fabs(elemento_massa_atomica("H") - 1.008) < 1e-6 && fabs(elemento_massa_atomica("O") - 15.999) < 1e-6);
-    bool invalidos = (elemento_massa_atomica("Xx") == -1 && elemento_massa_atomica(NULL) == -1);
-    return iguais && invalidos;
-}
+    /* elemento_numero_atomico */
+    VERIFICA(elemento_numero_atomico("H") == 1, "numero atomico de H e 1");
+    VERIFICA(elemento_numero_atomico("Sc") == 21, "numero atomico de Sc e 21");
+    VERIFICA(elemento_numero_atomico("Og") == 118, "numero atomico de Og e 118");
+    VERIFICA(elemento_numero_atomico("Xx") == -1, "numero atomico de simbolo inexistente e -1");
+    VERIFICA(elemento_numero_atomico(NULL) == -1, "numero atomico com argumento NULL e -1");
 
-bool teste_grupo(void) {
-    bool iguais = (elemento_grupo("H") == 1 && elemento_grupo("He") == 18 && elemento_grupo("Og") == 18);
-    bool invalidos = (elemento_grupo("Xx") == -1 && elemento_grupo(NULL) == -1);
-    return iguais && invalidos;
-}
+    /* elemento_massa_atomica */
+    VERIFICA(PERTO(elemento_massa_atomica("O"), 15.999, 1e-9), "massa atomica de O e 15,999");
+    VERIFICA(PERTO(elemento_massa_atomica("Ar"), 39.948, 1e-9), "massa atomica de Ar e 39,948");
+    VERIFICA(elemento_massa_atomica("Xx") == -1.0, "massa de simbolo inexistente e -1");
+    VERIFICA(elemento_massa_atomica(NULL) == -1.0, "massa com argumento NULL e -1");
 
-bool teste_periodo(void) {
-    bool iguais = (elemento_periodo("H") == 1 && elemento_periodo("Dy") == 6 && elemento_periodo("Og") == 7);
-    bool invalidos = (elemento_periodo("Xx") == -1 && elemento_periodo(NULL) == -1);
-    return iguais && invalidos;
-}
+    /* elemento_grupo */
+    VERIFICA(elemento_grupo("He") == 18, "grupo de He e 18");
+    VERIFICA(elemento_grupo("Na") == 1, "grupo de Na e 1");
+    VERIFICA(elemento_grupo("La") == 3 && elemento_grupo("U") == 3, "lantanideos e actinideos ficam no grupo 3");
+    VERIFICA(elemento_grupo("Xx") == -1, "grupo de simbolo inexistente e -1");
 
-bool teste_classificacao(void) {
-    bool iguais = (strcmp(elemento_classificacao("He"), "Gas nobre") == 0);
-    bool nulos = (elemento_classificacao("Xx") == NULL && elemento_classificacao(NULL) == NULL);
-    return iguais && nulos;
-}
+    /* elemento_periodo */
+    VERIFICA(elemento_periodo("H") == 1, "periodo de H e 1");
+    VERIFICA(elemento_periodo("Og") == 7, "periodo de Og e 7");
+    VERIFICA(elemento_periodo(NULL) == -1, "periodo com argumento NULL e -1");
 
-bool teste_simbolo(void) {
-    bool iguais = (strcmp(elemento_simbolo("Hidrogenio"), "H") == 0 && strcmp(elemento_simbolo("Disprosio"), "Dy") == 0 && strcmp(elemento_simbolo("Oganessonio"), "Og") == 0);
-    bool nulos = (elemento_simbolo("Xx") == NULL && elemento_simbolo(NULL) == NULL);
-    return iguais && nulos;
-}
+    /* elemento_classificacao */
+    VERIFICA(IGUAIS(elemento_classificacao("He"), "Gas nobre"), "He e gas nobre");
+    VERIFICA(IGUAIS(elemento_classificacao("Cl"), "Halogenio"), "Cl e halogenio");
+    VERIFICA(IGUAIS(elemento_classificacao("Fe"), "Metal de transicao"), "Fe e metal de transicao");
+    VERIFICA(elemento_classificacao("Xx") == NULL, "classificacao de simbolo inexistente e NULL");
 
-int main(void) {
-    printf("nome:            %s\n", teste_nome() ? "OK" : "FALHA");
-    printf("numero atomico:  %s\n", teste_numero_atomico() ? "OK" : "FALHA");
-    printf("massa atomica:   %s\n", teste_massa_atomica() ? "OK" : "FALHA");
-    printf("grupo:           %s\n", teste_grupo() ? "OK" : "FALHA");
-    printf("periodo:         %s\n", teste_periodo() ? "OK" : "FALHA");
-    printf("classificacao:   %s\n", teste_classificacao() ? "OK" : "FALHA");
-    printf("simbolo:         %s\n", teste_simbolo() ? "OK" : "FALHA");
+    /* elemento_simbolo */
+    VERIFICA(IGUAIS(elemento_simbolo("Fosforo"), "P"), "simbolo de Fosforo e P");
+    VERIFICA(IGUAIS(elemento_simbolo("Ferro"), "Fe"), "simbolo de Ferro e Fe");
+    VERIFICA(elemento_simbolo("fosforo") == NULL, "nome em minuscula nao e encontrado");
+    VERIFICA(elemento_simbolo("Fósforo") == NULL, "nome com acento nao e encontrado");
+    VERIFICA(elemento_simbolo(NULL) == NULL, "simbolo com argumento NULL e NULL");
 
-    return (teste_nome() && teste_numero_atomico() && teste_massa_atomica()
-         && teste_grupo() && teste_periodo() && teste_classificacao()
-         && teste_simbolo()) ? 0 : 1;
+    return fim_dos_testes("Elementos");
 }
