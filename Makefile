@@ -72,3 +72,14 @@ test: $(TESTES)
 	for t in $(TESTES); do ./$$t || falhou=1; echo; done; \
 	if [ $$falhou -eq 0 ]; then echo "RESULTADO: APROVADO (todos os testes passaram)"; \
 	else echo "RESULTADO: FALHOU (ha testes com erro)"; exit 1; fi
+
+install: $(LIB_A) $(LIB_SO)
+	install -d $(PREFIX)/lib $(PREFIX)/include
+	install -m 644 $(LIB_A) $(LIB_SO) $(PREFIX)/lib
+	install -m 644 $(HEADERS) $(PREFIX)/include
+
+clean:
+	rm -rf build lib bin
+
+# Dependências dos headers, geradas pelo gcc (-MMD)
+-include $(OBJ_ESTATICO:.o=.d) $(OBJ_DINAMICO:.o=.d) $(OBJ_TESTES:.o=.d) $(OBJ_APP:.o=.d)
