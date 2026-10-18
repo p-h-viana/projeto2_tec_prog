@@ -17,7 +17,7 @@ LIB_A  = lib/libquimica.a
 LIB_SO = lib/libquimica.so
 TESTES = $(MODULOS:%=bin/test_%)
 
-.PHONY: all clean run test install
+.PHONY: all clean run test install docs
 
 all: $(LIB_A) $(LIB_SO) bin/app_estatica bin/app_dinamica
 
@@ -83,3 +83,6 @@ clean:
 
 # Dependências dos headers, geradas pelo gcc (-MMD)
 -include $(OBJ_ESTATICO:.o=.d) $(OBJ_DINAMICO:.o=.d) $(OBJ_TESTES:.o=.d) $(OBJ_APP:.o=.d)
+
+docs:
+	doxygen Doxyfile
