@@ -18,9 +18,9 @@ sudo apt install build-essential git
 ## Estrutura do projeto
 
 ```
-A pasta `app/` contém a aplicação cliente, `include/` contém a API pública, `src/` contém a implementação dos módulos e `tests/` contém os testes automatizados.
+A pasta `app/` contém a aplicação cliente, `include/` contém a API pública, `src/` contém a implementação dos módulos e `tests/` contém os testes automatizados. O `Doxyfile` é a configuração do Doxygen.
 
-As pastas `build/`, `lib/` e `bin/` são criadas pelo `make` e não ficam no repositório. A `build/` recebe os arquivos objeto (`.o`) e de dependência (`.d`), a `lib/` recebe as bibliotecas e a `bin/` recebe os executáveis da aplicação e dos testes.
+As pastas `build/`, `lib/` e `bin/` são criadas pelo `make` e não ficam no repositório. O mesmo vale para a pasta `docs/`, criada pelo `make docs`. A `build/` recebe os arquivos objeto (`.o`) e de dependência (`.d`), a `lib/` recebe as bibliotecas e a `bin/` recebe os executáveis da aplicação e dos testes.
 
 ## Compilação
 
@@ -45,6 +45,8 @@ O `make test` compila e executa os testes de todos os módulos.
 O `make install` instala as bibliotecas e os headers, como descrito na seção de instalação.
 
 O `make clean` apaga as pastas `build/`, `lib/` e `bin/`.
+
+O `make docs` gera a documentação da API em HTML com o Doxygen, na pasta `docs/`. Para ver, abra o arquivo `docs/html/index.html` no navegador. Esse alvo é opcional e exige o Doxygen instalado.
 
 ## Execução
 
