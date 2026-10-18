@@ -49,8 +49,8 @@ typedef struct {
  *         - ::TERMO_ERRO_SUBSTANCIA_NAO_ENCONTRADA se uma substância não estiver na tabela.
  */
 TermoStatus termo_entalpia_reacao_bd(
-    int qtd_reagentes, Substancia reagentes[],
-    int qtd_produtos, Substancia produtos[],
+    int qtd_reagentes, Substancia reagentes[], double ent_reagentes[],
+    int qtd_produtos, Substancia produtos[], double ent_produtos[],
     double *point_delta_h, TipoReacao *point_tipo_reacao);
 
 /**
