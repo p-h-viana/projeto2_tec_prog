@@ -3,7 +3,7 @@
 
 Biblioteca em C para cálculos de química geral, feita para o Projeto 2 de Técnicas de Programação I (IME-USP).
 
-A biblioteca tem 17 funções públicas, divididas em quatro módulos. O módulo de elementos (`elementos.h`) consulta dados dos 118 elementos da tabela periódica. O de estequiometria (`estequiometria.h`) balanceia equações químicas e calcula a massa de produto, o reagente limitante e o rendimento. O de pH (`ph.h`) calcula o pH de ácidos fortes, fracos e muito diluídos e de soluções tampão. O de termoquímica (`termoquimica.h`) calcula a variação de entalpia de uma reação, a partir de uma tabela de entalpias de formação ou pela Lei de Hess.
+A biblioteca tem 17 funções públicas, divididas em quatro módulos. O módulo de elementos (`elementos.h`) consulta dados dos 118 elementos da tabela periódica. O de estequiometria (`estequiometria.h`) balanceia equações químicas e calcula a massa de produto, o reagente limitante e o rendimento. O de pH (`ph.h`) calcula o pH de ácidos fortes, fracos e muito diluídos e de soluções tampão. O de termoquímica (`termoquimica.h`) calcula a variação de entalpia de uma reação, a partir das entalpias de formação informadas pelo usuário ou pela Lei de Hess.
 
 A documentação de cada função (parâmetros, retorno e erros) está nos próprios headers, em `include/`.
 
@@ -17,7 +17,6 @@ sudo apt install build-essential git
 
 ## Estrutura do projeto
 
-```
 A pasta `app/` contém a aplicação cliente, `include/` contém a API pública, `src/` contém a implementação dos módulos e `tests/` contém os testes automatizados. O `Doxyfile` é a configuração do Doxygen.
 
 As pastas `build/`, `lib/` e `bin/` são criadas pelo `make` e não ficam no repositório. O mesmo vale para a pasta `docs/`, criada pelo `make docs`. A `build/` recebe os arquivos objeto (`.o`) e de dependência (`.d`), a `lib/` recebe as bibliotecas e a `bin/` recebe os executáveis da aplicação e dos testes.

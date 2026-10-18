@@ -25,12 +25,12 @@ TermoStatus termo_entalpia_reacao_bd(
     int qtd_produtos, Substancia produtos[], double ent_produtos[],
     double *point_delta_h, TipoReacao *point_tipo_reacao)
 {
-    int i, encontrou;
+    int i;
     double soma_h_reagentes = 0.0;
     double soma_h_produtos = 0.0;
-    double entalpia_temp;
 
-    if (point_delta_h == NULL || point_tipo_reacao == NULL || reagentes == NULL || produtos == NULL) {
+    if (point_delta_h == NULL || point_tipo_reacao == NULL || reagentes == NULL || produtos == NULL ||
+        ent_reagentes == NULL || ent_produtos == NULL) {
         return TERMO_ERRO_PONTEIRO_NULO;
     }
 

@@ -1,10 +1,9 @@
 /**
  * @file termoquimica.h
- * @brief Variação de entalpia de reações (tabela de entalpias e Lei de Hess).
+ * @brief Variação de entalpia de reações (entalpias de formação e Lei de Hess).
  *
- * @details As entalpias de formação ficam numa tabela interna pequena, com
- * valores padrão a 25 °C em kJ/mol: H2O (líquida), CO2, CH4 e O2. Os nomes
- * são comparados exatamente como escritos (ex.: "CO2").
+ * @details As entalpias de formação de cada substância são informadas pelo
+ * usuário, em kJ/mol, em vetores na mesma ordem dos reagentes e produtos.
  *
  * Uma reação com |ΔH| menor que 1e-6 kJ é classificada como atérmica, para
  * não depender de a soma em ponto flutuante dar exatamente zero.
@@ -17,7 +16,6 @@ typedef enum {
     TERMO_OK = 0,                        /**< Sucesso. */
     TERMO_ERRO_PONTEIRO_NULO,            /**< Algum ponteiro (ou nome de substância) é NULL. */
     TERMO_ERRO_QUANTIDADE_INVALIDA,      /**< Quantidade de substâncias ou equações <= 0. */
-    TERMO_ERRO_SUBSTANCIA_NAO_ENCONTRADA,/**< Substância fora da tabela de entalpias. */
     TERMO_ERRO_VALOR_INVALIDO            /**< Número não finito ou quantidade em mol negativa. */
 } TermoStatus;
 
@@ -35,18 +33,21 @@ typedef struct {
 } Substancia;
 
 /**
- * @brief Calcula ΔH = Σ(n·ΔHf produtos) − Σ(n·ΔHf reagentes) usando a tabela interna.
+ * @brief Calcula ΔH = Σ(n·ΔHf produtos) − Σ(n·ΔHf reagentes).
  * @param qtd_reagentes     Número de reagentes (> 0).
  * @param reagentes         Vetor com os reagentes.
+ * @param ent_reagentes     Entalpia de formação de cada reagente, em kJ/mol,
+ *                          na mesma ordem de @p reagentes.
  * @param qtd_produtos      Número de produtos (> 0).
  * @param produtos          Vetor com os produtos.
+ * @param ent_produtos      Entalpia de formação de cada produto, em kJ/mol,
+ *                          na mesma ordem de @p produtos.
  * @param point_delta_h     Recebe ΔH em kJ.
  * @param point_tipo_reacao Recebe a classificação da reação.
  * @return ::TERMO_OK, ou:
  *         - ::TERMO_ERRO_PONTEIRO_NULO se algum ponteiro ou nome for NULL;
  *         - ::TERMO_ERRO_QUANTIDADE_INVALIDA se alguma quantidade for <= 0;
- *         - ::TERMO_ERRO_VALOR_INVALIDO se algum @c mols for negativo ou não finito;
- *         - ::TERMO_ERRO_SUBSTANCIA_NAO_ENCONTRADA se uma substância não estiver na tabela.
+ *         - ::TERMO_ERRO_VALOR_INVALIDO se algum @c mols for negativo ou não finito.
  */
 TermoStatus termo_entalpia_reacao_bd(
     int qtd_reagentes, Substancia reagentes[], double ent_reagentes[],
