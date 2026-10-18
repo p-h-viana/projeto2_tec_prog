@@ -39,18 +39,21 @@ static void demo_ph(void) {
 
 static void demo_termoquimica(void) {
     Substancia reagentes[] = {{"CH4", 1.0}, {"O2", 2.0}};
+    double ent_reagentes[] = {-74.8, 0.0}; /* Vetor adicionado */
+    
     Substancia produtos[]  = {{"CO2", 1.0}, {"H2O", 2.0}};
+    double ent_produtos[]  = {-393.5, -285.8}; /* Vetor adicionado */
+    
     double dh;
     TipoReacao tipo;
 
     printf("[ Modulo: Termoquimica ]\n");
     
-    if (termo_entalpia_reacao_bd(2, reagentes, 2, produtos, &dh, &tipo) == TERMO_OK) {
+    if (termo_entalpia_reacao_bd(2, reagentes, ent_reagentes, 2, produtos, ent_produtos, &dh, &tipo) == TERMO_OK) {
         const char *classificacao = (tipo == TERMO_REACAO_EXOTERMICA) ? "Exotermica" : "Nao exotermica";
         printf("Combustao CH4: dH = %.1f kJ (%s)\n\n", dh, classificacao);
     }
 }
-
 int main(void) {
     demo_elementos();
     demo_estequiometria();
