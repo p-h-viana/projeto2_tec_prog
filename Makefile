@@ -9,7 +9,7 @@ MODULOS = ph termoquimica estequiometria elementos
 
 OBJ_ESTATICO = $(MODULOS:%=build/estatico/%.o)
 OBJ_DINAMICO = $(MODULOS:%=build/dinamico/%.o)
-OBJ_TESTES   = $(MODULOS:%=build/tests/test_%.o)
+OBJ_TESTES   = $(MODULOS:%=build/tests/test_%.o) build/tests/teste.o
 OBJ_APP      = build/app/main.o
 HEADERS      = $(MODULOS:%=include/%.h)
 
@@ -56,9 +56,9 @@ $(OBJ_TESTES): build/tests/%.o: tests/%.c
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) $(DEPFLAGS) -c $< -o $@
 
-$(TESTES): bin/%: build/tests/%.o $(LIB_A)
+$(TESTES): bin/%: build/tests/%.o build/tests/teste.o $(LIB_A)
 	@mkdir -p $(@D)
-	$(CC) $< $(LIB_A) $(LDLIBS) -o $@
+	$(CC) $< build/tests/teste.o $(LIB_A) $(LDLIBS) -o $@
 
 run: bin/app_estatica bin/app_dinamica
 	@echo "== Aplicacao com a biblioteca estatica =="
