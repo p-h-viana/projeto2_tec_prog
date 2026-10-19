@@ -39,10 +39,10 @@ static void demo_ph(void) {
 
 static void demo_termoquimica(void) {
     Substancia reagentes[] = {{"CH4", 1.0}, {"O2", 2.0}};
-    double ent_reagentes[] = {-74.8, 0.0}; /* Vetor adicionado */
+    double ent_reagentes[] = {-74.8, 0.0}; 
     
     Substancia produtos[]  = {{"CO2", 1.0}, {"H2O", 2.0}};
-    double ent_produtos[]  = {-393.5, -285.8}; /* Vetor adicionado */
+    double ent_produtos[]  = {-393.5, -285.8}; 
     
     double dh;
     TipoReacao tipo;
