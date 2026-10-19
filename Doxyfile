@@ -1,6 +1,7 @@
 PROJECT_NAME           = libquimica
-OUTPUT_LANGUAGE        = portugues
+OUTPUT_LANGUAGE        = Brazilian
 INPUT                  = include README.md
 USE_MDFILE_AS_MAINPAGE = README.md
 OUTPUT_DIRECTORY       = docs
 GENERATE_LATEX         = NO
+PROJECT_NUMBER         = 1.0
