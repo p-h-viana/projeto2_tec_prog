@@ -11,7 +11,7 @@ OBJ_ESTATICO = $(MODULOS:%=build/estatico/%.o)
 OBJ_DINAMICO = $(MODULOS:%=build/dinamico/%.o)
 OBJ_TESTES   = $(MODULOS:%=build/tests/test_%.o) build/tests/teste.o
 OBJ_APP      = build/app/main.o
-HEADERS      = $(MODULOS:%=include/%.h)
+HEADERS = $(MODULOS:%=include/%.h) include/quimica.h
 
 LIB_A  = lib/libquimica.a
 LIB_SO = lib/libquimica.so
